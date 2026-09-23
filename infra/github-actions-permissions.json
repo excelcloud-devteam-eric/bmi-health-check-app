@@ -121,15 +121,27 @@
       "Sid": "TFState",
       "Effect": "Allow",
       "Action": [
-        "s3:ListBucket",
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::bmi-health-check-app-tfstate-124666675812",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "bmi-health-check-app",
+            "bmi-health-check-app/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "TFStateObject",
+      "Effect": "Allow",
+      "Action": [
         "s3:GetObject",
         "s3:PutObject",
         "s3:DeleteObject"
       ],
-      "Resource": [
-        "arn:aws:s3:::bmi-health-check-tfstate-ACCOUNT_ID",
-        "arn:aws:s3:::bmi-health-check-tfstate-ACCOUNT_ID/*"
-      ]
+      "Resource": "arn:aws:s3:::bmi-health-check-app-tfstate-124666675812/bmi-health-check-app/terraform.tfstate"
     },
     {
       "Sid": "TFLock",
