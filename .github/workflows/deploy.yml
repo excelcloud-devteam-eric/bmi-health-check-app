@@ -39,6 +39,8 @@ jobs:
       image_uri: ${{ steps.meta.outputs.image_uri }}
     env:
       IMAGE_TAG: ${{ github.sha }}
+      IMAGE_URI: ""
+      IMAGE_REF: ""
     steps:
       - uses: actions/checkout@v4
 
@@ -47,6 +49,9 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -84,25 +89,31 @@ jobs:
           }
 
           IMAGE_URI="${REGISTRY}/${PROJECT_NAME}"
+          IMAGE_REF="${IMAGE_URI}:${IMAGE_TAG}"
+
           echo "image_uri=${IMAGE_URI}" >> "$GITHUB_OUTPUT"
           echo "image_tag=${IMAGE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
+
           echo "IMAGE_URI=${IMAGE_URI}" >> "$GITHUB_ENV"
+          echo "IMAGE_REF=${IMAGE_REF}" >> "$GITHUB_ENV"
+
+          echo "Using image: ${IMAGE_REF}"
 
       - name: Validate image metadata
-        env:
-          IMAGE_URI: ${{ steps.meta.outputs.image_uri }}
-          IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
         run: |
           set -euo pipefail
-          test -n "$IMAGE_URI" || {
-            echo "IMAGE_URI is empty"
+          test -n "${IMAGE_REF:-}" || {
+            echo "IMAGE_REF is empty"
             exit 1
           }
-          test -n "$IMAGE_TAG" || {
-            echo "IMAGE_TAG is empty"
-            exit 1
-          }
-          echo "Scanning ${IMAGE_URI}:${IMAGE_TAG}"
+          case "$IMAGE_REF" in
+            */*:*) ;;
+            *)
+              echo "Invalid image reference: $IMAGE_REF"
+              exit 1
+              ;;
+          esac
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -114,15 +125,15 @@ jobs:
           push: false
           load: true
           tags: |
-            ${{ steps.meta.outputs.image_uri }}:${{ steps.meta.outputs.image_tag }}
-            ${{ steps.meta.outputs.image_uri }}:latest
+            ${{ env.IMAGE_REF }}
+            ${{ env.IMAGE_URI }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ steps.meta.outputs.image_uri }}:${{ steps.meta.outputs.image_tag }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: table
           exit-code: "1"
           severity: CRITICAL,HIGH
@@ -133,7 +144,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         with:
-          image-ref: ${{ steps.meta.outputs.image_uri }}:${{ steps.meta.outputs.image_tag }}
+          image-ref: ${{ env.IMAGE_REF }}
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
@@ -148,9 +159,9 @@ jobs:
 
       - name: Push image to ECR
         run: |
-          docker push "${IMAGE_URI}:${IMAGE_TAG}"
+          docker push "$IMAGE_REF"
           docker push "${IMAGE_URI}:latest"
-          echo "Pushed ${IMAGE_URI}:${IMAGE_TAG}"
+          echo "Pushed ${IMAGE_REF}"
           echo "Pushed ${IMAGE_URI}:latest"
 
   deploy:
@@ -167,6 +178,9 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
