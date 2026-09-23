@@ -51,7 +51,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify AWS identity
-        run: aws sts get-caller-identity
+        run: |
+          set -euo pipefail
+          EXPECTED_ROLE="arn:aws:iam::124666675812:role/github-actions-bmi-health-check"
+          CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
+          echo "AWS caller: ${CALLER_ARN}"
+          test "$CALLER_ARN" = "$EXPECTED_ROLE" || {
+            echo "Unexpected AWS role. Expected ${EXPECTED_ROLE}"
+            exit 1
+          }
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -180,7 +188,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Verify AWS identity
-        run: aws sts get-caller-identity
+        run: |
+          set -euo pipefail
+          EXPECTED_ROLE="arn:aws:iam::124666675812:role/github-actions-bmi-health-check"
+          CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
+          echo "AWS caller: ${CALLER_ARN}"
+          test "$CALLER_ARN" = "$EXPECTED_ROLE" || {
+            echo "Unexpected AWS role. Expected ${EXPECTED_ROLE}"
+            exit 1
+          }
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
