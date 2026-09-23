@@ -39,8 +39,6 @@ jobs:
       image_uri: ${{ steps.meta.outputs.image_uri }}
     env:
       IMAGE_TAG: ${{ github.sha }}
-      IMAGE_URI: ""
-      IMAGE_REF: ""
     steps:
       - uses: actions/checkout@v4
 
@@ -109,9 +107,11 @@ jobs:
           echo "Using image: ${IMAGE_REF}"
 
       - name: Validate image metadata
+        env:
+          IMAGE_REF: ${{ steps.meta.outputs.image_ref }}
         run: |
           set -euo pipefail
-          test -n "${IMAGE_REF:-}" || {
+          test -n "$IMAGE_REF" || {
             echo "IMAGE_REF is empty"
             exit 1
           }
@@ -133,15 +133,15 @@ jobs:
           push: false
           load: true
           tags: |
-            ${{ env.IMAGE_REF }}
-            ${{ env.IMAGE_URI }}:latest
+            ${{ steps.meta.outputs.image_ref }}
+            ${{ steps.meta.outputs.image_uri }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.IMAGE_REF }}
+          image-ref: ${{ steps.meta.outputs.image_ref }}
           format: table
           exit-code: "1"
           severity: CRITICAL,HIGH
@@ -152,7 +152,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: true
         with:
-          image-ref: ${{ env.IMAGE_REF }}
+          image-ref: ${{ steps.meta.outputs.image_ref }}
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH,MEDIUM
