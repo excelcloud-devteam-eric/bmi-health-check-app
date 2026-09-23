@@ -9,13 +9,8 @@
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": [
-            "repo:excelcloud-devteam-eric/bmi-health-check-app:*",
-            "repo:excelcloud-devteam-eric@*/bmi-health-check-app@*:*"
-          ]
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": "repo:excelcloud-devteam-eric/bmi-health-check-app:ref:refs/heads/main"
         }
       }
     }
