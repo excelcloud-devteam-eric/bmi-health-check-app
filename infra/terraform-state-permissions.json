@@ -11,21 +11,24 @@
       "Condition": {
         "StringLike": {
           "s3:prefix": [
-            "bmi-health-check-app",
-            "bmi-health-check-app/*"
+            "bmi-health-check-app/terraform.tfstate",
+            "bmi-health-check-app/terraform.tfstate.tflock"
           ]
         }
       }
     },
     {
-      "Sid": "ManageTerraformStateObject",
+      "Sid": "ManageTerraformState",
       "Effect": "Allow",
       "Action": [
         "s3:GetObject",
         "s3:PutObject",
         "s3:DeleteObject"
       ],
-      "Resource": "arn:aws:s3:::bmi-health-check-app-tfstate-124666675812/bmi-health-check-app/terraform.tfstate"
+      "Resource": [
+        "arn:aws:s3:::bmi-health-check-app-tfstate-124666675812/bmi-health-check-app/terraform.tfstate",
+        "arn:aws:s3:::bmi-health-check-app-tfstate-124666675812/bmi-health-check-app/terraform.tfstate.tflock"
+      ]
     }
   ]
 }
