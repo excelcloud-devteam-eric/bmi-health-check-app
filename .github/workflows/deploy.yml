@@ -51,13 +51,23 @@ jobs:
       - name: Verify AWS identity
         run: |
           set -euo pipefail
-          EXPECTED_ROLE="arn:aws:iam::124666675812:role/github-actions-bmi-health-check"
-          CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
+          EXPECTED_ACCOUNT="124666675812"
+          EXPECTED_ROLE="github-actions-bmi-health-check"
+          CALLER_ARN="$(aws sts get-caller-identity --query Arn --output text)"
+          EXPECTED_PREFIX="arn:aws:sts::${EXPECTED_ACCOUNT}:assumed-role/${EXPECTED_ROLE}/"
+
           echo "AWS caller: ${CALLER_ARN}"
-          test "$CALLER_ARN" = "$EXPECTED_ROLE" || {
-            echo "Unexpected AWS role. Expected ${EXPECTED_ROLE}"
-            exit 1
-          }
+
+          case "$CALLER_ARN" in
+            "${EXPECTED_PREFIX}"*)
+              echo "AWS role verified"
+              ;;
+            *)
+              echo "Unexpected AWS identity: ${CALLER_ARN}"
+              echo "Expected an assumed role beginning with: ${EXPECTED_PREFIX}"
+              exit 1
+              ;;
+          esac
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -204,13 +214,23 @@ jobs:
       - name: Verify AWS identity
         run: |
           set -euo pipefail
-          EXPECTED_ROLE="arn:aws:iam::124666675812:role/github-actions-bmi-health-check"
-          CALLER_ARN=$(aws sts get-caller-identity --query Arn --output text)
+          EXPECTED_ACCOUNT="124666675812"
+          EXPECTED_ROLE="github-actions-bmi-health-check"
+          CALLER_ARN="$(aws sts get-caller-identity --query Arn --output text)"
+          EXPECTED_PREFIX="arn:aws:sts::${EXPECTED_ACCOUNT}:assumed-role/${EXPECTED_ROLE}/"
+
           echo "AWS caller: ${CALLER_ARN}"
-          test "$CALLER_ARN" = "$EXPECTED_ROLE" || {
-            echo "Unexpected AWS role. Expected ${EXPECTED_ROLE}"
-            exit 1
-          }
+
+          case "$CALLER_ARN" in
+            "${EXPECTED_PREFIX}"*)
+              echo "AWS role verified"
+              ;;
+            *)
+              echo "Unexpected AWS identity: ${CALLER_ARN}"
+              echo "Expected an assumed role beginning with: ${EXPECTED_PREFIX}"
+              exit 1
+              ;;
+          esac
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
