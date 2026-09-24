@@ -155,7 +155,7 @@
         "dynamodb:DeleteItem",
         "dynamodb:DescribeTable"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-2:ACCOUNT_ID:table/bmi-health-check-tf-locks"
+      "Resource": "arn:aws:dynamodb:us-east-2:124666675812:table/bmi-health-check-tf-locks"
     }
   ]
 }
